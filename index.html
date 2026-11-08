@@ -14,13 +14,13 @@ main{width:min(760px,100%)}header{text-align:center;margin:8px 0 24px}.eyebrow{c
 .go-strip{height:13px;border-radius:10px;background:#252832;margin:0 0 22px;transition:background .08s,box-shadow .08s}.go-strip.go{background:var(--green);box-shadow:0 0 22px #20df78aa}
 .status{text-align:center;min-height:58px;font-size:1.1rem;font-weight:800;display:grid;place-items:center;margin:8px 0 14px}.status small{display:block;color:var(--muted);font-size:.82rem;font-weight:500;margin-top:5px}
 button{border:0;border-radius:12px;padding:16px 24px;font-size:1rem;font-weight:900;cursor:pointer;transition:transform .12s,filter .12s}button:active{transform:scale(.98)}button:disabled{opacity:.45;cursor:not-allowed}.primary{width:100%;background:var(--yellow);color:#111}.tap{width:100%;min-height:92px;background:#202633;color:white;border:2px solid #566176;font-size:1.4rem;letter-spacing:.08em}.tap.ready{background:var(--green);color:#07130c;border-color:#a7ffd0}.tap.false{background:var(--red);border-color:#ff9aa4}
-.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.stat{background:#090c12;border:1px solid #293141;border-radius:12px;padding:14px}.stat label{display:block;color:var(--muted);font-size:.78rem;margin-bottom:6px}.stat strong{font-size:1.5rem;color:var(--yellow)}.note{font-size:.8rem;color:var(--muted);line-height:1.5;margin:18px 2px 0}.history{margin-top:16px;color:var(--muted);font-size:.86rem;text-align:center}
+.controls{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:18px 0}.control{display:grid;gap:7px;color:var(--muted);font-size:.75rem;font-weight:800;letter-spacing:.05em}.control input,.control select{width:100%;min-width:0;padding:12px;border-radius:9px;border:1px solid #394355;background:#090c12;color:var(--white);font:inherit}.sound-btn{grid-column:1/-1;background:#202633;color:white;border:1px solid #566176;padding:11px}.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.stat{background:#090c12;border:1px solid #293141;border-radius:12px;padding:14px}.stat label{display:block;color:var(--muted);font-size:.78rem;margin-bottom:6px}.stat strong{font-size:1.5rem;color:var(--yellow)}.note{font-size:.8rem;color:var(--muted);line-height:1.5;margin:18px 2px 0}.history-panel{margin-top:20px;padding-top:10px;border-top:1px solid #303747}.history-panel h2{font-size:1rem;color:var(--yellow);margin:18px 0 8px}.history-panel ol{padding-left:24px;color:var(--muted);font-size:.86rem;line-height:1.8}
 a{color:#7daee8}
 
 .confetti-piece{position:fixed;top:-14px;width:9px;height:14px;z-index:9999;pointer-events:none;animation:confetti-fall 2.8s ease-in forwards}
 @keyframes confetti-fall{to{transform:translate3d(var(--drift),110vh,0) rotate(900deg);opacity:.15}}
 @media(prefers-reduced-motion:reduce){.confetti-piece{animation-duration:1.2s}}
-@media(max-width:420px){body{padding:16px 10px}.lights{gap:7px}.light{border-width:4px}.stats{gap:8px}}
+@media(max-width:420px){body{padding:16px 10px}.lights{gap:7px}.light{border-width:4px}.stats{gap:8px}.controls{grid-template-columns:1fr}.sound-btn{grid-column:auto}}
 </style>
 </head>
 <body>
@@ -34,55 +34,53 @@ a{color:#7daee8}
 <div class="status" id="status" aria-live="polite">Ready when you are.<small>Press START, wait for green, then tap as fast as you can.</small></div>
 <button class="primary" id="startBtn">START RACE</button>
 <button class="tap" id="tapBtn" hidden disabled>WAIT FOR GREEN</button>
-<div class="stats">
-<div class="stat"><label>YOUR LAST REACTION</label><strong id="last">-- ms</strong></div>
-<div class="stat"><label>PERSONAL BEST</label><strong id="best">-- ms</strong></div>
+<div class="controls">
+<label class="control">DRIVER NAME <input id="playerName" maxlength="16" autocomplete="nickname" placeholder="Enter a nickname"></label>
+<label class="control">DIFFICULTY <select id="difficulty"><option value="easy">Rookie</option><option value="normal" selected>Grand Prix</option><option value="hard">Championship</option></select></label>
+<button class="sound-btn" id="soundBtn" type="button" aria-pressed="true">🔊 SOUND ON</button>
 </div>
-<p class="note">False starts count if you tap before the green signal. Your personal best is saved on this device and browser. Timing can vary slightly between devices.</p>
-<div class="history" id="history">Daily global leaderboard: coming in a later update.</div>
+<div class="stats">
+<div class="stat"><label>LAST REACTION</label><strong id="last">-- ms</strong></div>
+<div class="stat"><label>PERSONAL BEST</label><strong id="best">-- ms</strong></div>
+<div class="stat"><label>AVERAGE</label><strong id="average">-- ms</strong></div>
+<div class="stat"><label>RACES COMPLETED</label><strong id="attempts">0</strong></div>
+</div>
+<section class="history-panel">
+<h2>📊 Recent races</h2><ol id="historyList"><li>No races yet. Start your first race!</li></ol>
+<h2>🏆 Local leaderboard</h2><p class="note">Top results saved on this device and browser.</p><ol id="leaderboard"><li>No results yet.</li></ol>
+</section>
+<p class="note">Your profile, race history and personal best are saved on this device and browser. Timing can vary slightly between devices.</p>
+<p class="note">Online global rankings are not enabled yet. They need a secure online database and player identity system.</p>
 </section>
 </main>
 <script>
 (function(){
 const lights=[...document.querySelectorAll('.light')],strip=document.getElementById('goStrip'),status=document.getElementById('status'),start=document.getElementById('startBtn'),tap=document.getElementById('tapBtn'),last=document.getElementById('last'),best=document.getElementById('best');
-let phase='idle',timers=[],goAt=0,roundStart=0;
-const saved=Number(localStorage.getItem('curbReactionBest'));
-if(saved>0)best.textContent=saved+' ms';
-
-function celebrate(){
-const colors=['#ffd700','#20df78','#e32636','#ffffff','#4da3ff'];
-for(let i=0;i<90;i++){
-const piece=document.createElement('i');
-piece.className='confetti-piece';
-piece.style.left=(Math.random()*100)+'vw';
-piece.style.background=colors[Math.floor(Math.random()*colors.length)];
-piece.style.setProperty('--drift',((Math.random()-.5)*260)+'px');
-piece.style.animationDelay=(Math.random()*.45)+'s';
-piece.style.borderRadius=Math.random()>.5?'50%':'2px';
-document.body.appendChild(piece);
-setTimeout(()=>piece.remove(),3500);
-}
-}
+const nameInput=document.getElementById('playerName'),difficulty=document.getElementById('difficulty'),soundBtn=document.getElementById('soundBtn'),averageEl=document.getElementById('average'),attemptsEl=document.getElementById('attempts'),historyList=document.getElementById('historyList'),leaderboardEl=document.getElementById('leaderboard');
+const KEYS={name:'curbPlayerName',mode:'curbDifficulty',best:'curbReactionBest',runs:'curbReactionRuns',scores:'curbReactionScores'};
+let phase='idle',timers=[],goAt=0,soundOn=true,audio=null;
+const read=(key,fallback)=>{try{return JSON.parse(localStorage.getItem(key))??fallback}catch{return fallback}};
+const write=(key,value)=>localStorage.setItem(key,JSON.stringify(value));
+nameInput.value=localStorage.getItem(KEYS.name)||'';
+difficulty.value=localStorage.getItem(KEYS.mode)||'normal';
+function getRuns(){return read(KEYS.runs,[])}
+function getScores(){return read(KEYS.scores,[])}
+function escapeText(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function tone(freq=650,duration=.12,type='sine'){if(!soundOn)return;try{audio=audio||new(window.AudioContext||window.webkitAudioContext)();if(audio.state==='suspended')audio.resume();const osc=audio.createOscillator(),gain=audio.createGain();osc.type=type;osc.frequency.value=freq;gain.gain.setValueAtTime(.0001,audio.currentTime);gain.gain.exponentialRampToValueAtTime(.13,audio.currentTime+.01);gain.gain.exponentialRampToValueAtTime(.0001,audio.currentTime+duration);osc.connect(gain);gain.connect(audio.destination);osc.start();osc.stop(audio.currentTime+duration+.02)}catch(e){}}
+function render(){const runs=getRuns(),scores=getScores(),pb=Number(localStorage.getItem(KEYS.best))||0;best.textContent=pb?pb+' ms':'-- ms';attemptsEl.textContent=runs.length;averageEl.textContent=runs.length?Math.round(runs.reduce((sum,r)=>sum+r.ms,0)/runs.length)+' ms':'-- ms';historyList.innerHTML=runs.length?runs.slice(0,8).map(r=>'<li><strong>'+r.ms+' ms</strong> · '+escapeText(r.mode)+' · '+escapeText(r.name)+'</li>').join(''):'<li>No races yet. Start your first race!</li>';leaderboardEl.innerHTML=scores.length?scores.slice(0,10).map((r,i)=>'<li><strong>#'+(i+1)+' '+escapeText(r.name)+'</strong> · '+r.ms+' ms · '+escapeText(r.mode)+'</li>').join(''):'<li>No results yet.';}
+function say(main,sub){status.innerHTML=main+(sub?'<small>'+sub+'</small>':'')}
+function celebrate(){const colors=['#ffd700','#20df78','#e32636','#ffffff','#4da3ff'];for(let i=0;i<90;i++){const p=document.createElement('i');p.className='confetti-piece';p.style.left=Math.random()*100+'vw';p.style.background=colors[Math.floor(Math.random()*colors.length)];p.style.setProperty('--drift',((Math.random()-.5)*260)+'px');p.style.animationDelay=Math.random()*.45+'s';p.style.borderRadius=Math.random()>.5?'50%':'2px';document.body.appendChild(p);setTimeout(()=>p.remove(),3500)}}
 function clearTimers(){timers.forEach(clearTimeout);timers=[]}
 function resetLights(){lights.forEach(x=>x.classList.remove('on'));strip.classList.remove('go')}
-function say(main,sub){status.innerHTML=main+(sub?'<small>'+sub+'</small>':'')}
-function finish(){clearTimers();phase='idle';start.hidden=false;tap.hidden=true;tap.disabled=true;start.textContent='RACE AGAIN'}
-function falseStart(){if(phase!=='countdown'&&phase!=='waiting')return;clearTimers();phase='false';tap.classList.add('false');tap.textContent='FALSE START';say('FALSE START!','You jumped the lights. Take a breath and try again.');finish();setTimeout(()=>tap.classList.remove('false'),500)}
-function begin(){clearTimers();resetLights();last.textContent='-- ms';start.hidden=true;tap.hidden=false;tap.disabled=false;tap.classList.remove('ready','false');tap.textContent='WAIT FOR GREEN';phase='countdown';say('LIGHTS OUT SOON...','Wait for the green strip. Do not tap early.');
-lights.forEach((light,i)=>timers.push(setTimeout(()=>light.classList.add('on'),650+i*650)));
-const delay=650+4*650+700+Math.random()*2600;
-timers.push(setTimeout(()=>{if(phase!=='countdown')return;lights.forEach(x=>x.classList.remove('on'));strip.classList.add('go');phase='go';goAt=performance.now();tap.classList.add('ready');tap.textContent='TAP NOW!';say('GO! GO! GO!','Tap the button now!');},delay));
-}
+function finish(){clearTimers();phase='idle';start.hidden=false;tap.hidden=true;tap.disabled=true}
+function falseStart(){if(phase!=='countdown')return;clearTimers();phase='false';tone(180,.35,'sawtooth');tap.classList.add('false');tap.textContent='FALSE START';say('FALSE START!','You jumped the lights. Try again.');finish();setTimeout(()=>tap.classList.remove('false'),500)}
+function begin(){clearTimers();resetLights();last.textContent='-- ms';start.hidden=true;tap.hidden=false;tap.disabled=false;tap.classList.remove('ready','false');tap.textContent='WAIT FOR GREEN';phase='countdown';say('LIGHTS OUT SOON...','Wait for the green strip. Do not tap early.');lights.forEach((light,i)=>timers.push(setTimeout(()=>{light.classList.add('on');tone(420,.09)},650+i*650)));const mode=difficulty.value,range=mode==='easy'?[900,1700]:mode==='hard'?[250,1100]:[550,1450];const delay=650+4*650+700+range[0]+Math.random()*(range[1]-range[0]);timers.push(setTimeout(()=>{if(phase!=='countdown')return;lights.forEach(x=>x.classList.remove('on'));strip.classList.add('go');phase='go';goAt=performance.now();tap.classList.add('ready');tap.textContent='TAP NOW!';tone(880,.22,'square');say('GO! GO! GO!','Tap the button now!')},delay))}
 start.addEventListener('click',begin);
-tap.addEventListener('click',()=>{
-if(phase==='countdown'||phase==='waiting'){falseStart();return}
-if(phase!=='go')return;
-const reaction=Math.round(performance.now()-goAt);phase='result';last.textContent=reaction+' ms';
-const old=Number(localStorage.getItem('curbReactionBest'))||0;
-if(!old||reaction<old){localStorage.setItem('curbReactionBest',String(reaction));best.textContent=reaction+' ms';celebrate();say(reaction+' ms! NEW PERSONAL BEST','Excellent launch. Your best is saved on this device.')}
-else{say(reaction+' ms','Good run. Try again to beat your '+old+' ms personal best.')}
-finish();
-});
+tap.addEventListener('click',()=>{if(phase==='countdown'){falseStart();return}if(phase!=='go')return;const reaction=Math.round(performance.now()-goAt);phase='result';last.textContent=reaction+' ms';tone(600,.09);const mode=difficulty.value,name=(nameInput.value.trim()||'Guest').slice(0,16),old=Number(localStorage.getItem(KEYS.best))||0;const runs=getRuns();runs.unshift({ms:reaction,mode,name,date:new Date().toISOString()});write(KEYS.runs,runs.slice(0,100));const scores=getScores();scores.push({ms:reaction,mode,name,date:new Date().toISOString()});scores.sort((a,b)=>a.ms-b.ms);write(KEYS.scores,scores.slice(0,50));if(!old||reaction<old){localStorage.setItem(KEYS.best,String(reaction));celebrate();say(reaction+' ms! NEW PERSONAL BEST','Your best is saved on this device.');tone(1040,.3,'triangle')}else say(reaction+' ms','Good run. Your best is '+old+' ms. Try again!');render();finish()});
+nameInput.addEventListener('change',()=>localStorage.setItem(KEYS.name,nameInput.value.trim().slice(0,16)));
+difficulty.addEventListener('change',()=>localStorage.setItem(KEYS.mode,difficulty.value));
+soundBtn.addEventListener('click',()=>{soundOn=!soundOn;soundBtn.textContent=soundOn?'🔊 SOUND ON':'🔇 SOUND OFF';soundBtn.setAttribute('aria-pressed',String(soundOn));if(soundOn)tone(700,.12)});
+render();
 })();
 </script>
 </body>
