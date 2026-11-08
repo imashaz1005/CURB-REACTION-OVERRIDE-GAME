@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#08090d">
+<title>Curb Override | F1 Reaction Test</title>
+<style>
+:root{color-scheme:dark;--bg:#08090d;--panel:#12151d;--yellow:#ffd700;--red:#e32636;--blue:#12345a;--white:#f4f5f7;--muted:#9ba3b4;--green:#20df78}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#252a38 0,var(--bg) 58%);color:var(--white);font-family:Arial,Helvetica,sans-serif;min-height:100vh;display:flex;justify-content:center;padding:28px 16px}
+main{width:min(760px,100%)}header{text-align:center;margin:8px 0 24px}.eyebrow{color:var(--red);font-weight:900;letter-spacing:.22em;font-size:.75rem}h1{font-size:clamp(2rem,7vw,3.5rem);line-height:1;margin:10px 0;color:var(--yellow);font-style:italic;text-transform:uppercase}h1 span{color:var(--white)}.sub{color:var(--muted);margin:0}
+.card{background:linear-gradient(145deg,#171b25,#0e1118);border:1px solid #303747;border-radius:18px;padding:clamp(18px,4vw,30px);box-shadow:0 18px 55px #0008}
+.lights{display:flex;justify-content:center;gap:clamp(9px,3vw,20px);padding:22px 8px 26px;background:#050609;border:1px solid #303747;border-radius:16px;margin-bottom:18px}.light{width:clamp(42px,10vw,64px);aspect-ratio:1;border-radius:50%;background:#300b10;border:5px solid #252832;box-shadow:inset 0 0 15px #000,0 3px 8px #000}.light.on{background:#ff172d;box-shadow:0 0 18px #ff243c,0 0 35px #ff243c88,inset 0 0 12px #fff6}
+.go-strip{height:13px;border-radius:10px;background:#252832;margin:0 0 22px;transition:background .08s,box-shadow .08s}.go-strip.go{background:var(--green);box-shadow:0 0 22px #20df78aa}
+.status{text-align:center;min-height:58px;font-size:1.1rem;font-weight:800;display:grid;place-items:center;margin:8px 0 14px}.status small{display:block;color:var(--muted);font-size:.82rem;font-weight:500;margin-top:5px}
+button{border:0;border-radius:12px;padding:16px 24px;font-size:1rem;font-weight:900;cursor:pointer;transition:transform .12s,filter .12s}button:active{transform:scale(.98)}button:disabled{opacity:.45;cursor:not-allowed}.primary{width:100%;background:var(--yellow);color:#111}.tap{width:100%;min-height:92px;background:#202633;color:white;border:2px solid #566176;font-size:1.4rem;letter-spacing:.08em}.tap.ready{background:var(--green);color:#07130c;border-color:#a7ffd0}.tap.false{background:var(--red);border-color:#ff9aa4}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.stat{background:#090c12;border:1px solid #293141;border-radius:12px;padding:14px}.stat label{display:block;color:var(--muted);font-size:.78rem;margin-bottom:6px}.stat strong{font-size:1.5rem;color:var(--yellow)}.note{font-size:.8rem;color:var(--muted);line-height:1.5;margin:18px 2px 0}.history{margin-top:16px;color:var(--muted);font-size:.86rem;text-align:center}
+a{color:#7daee8}
+@media(max-width:420px){body{padding:16px 10px}.lights{gap:7px}.light{border-width:4px}.stats{gap:8px}}
+</style>
+</head>
+<body>
+<main>
+<header><div class="eyebrow">CURB OVERRIDE NEWS PRESENTS</div><h1>REACTION <span>TEST</span></h1><p class="sub">Five lights. One launch. How quick are you?</p></header>
+<section class="card" aria-label="F1 reaction time game">
+<div class="lights" id="lights" aria-label="Starting lights">
+<div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div><div class="light"></div>
+</div>
+<div class="go-strip" id="goStrip" aria-label="Green means go"></div>
+<div class="status" id="status" aria-live="polite">Ready when you are.<small>Press START, wait for green, then tap as fast as you can.</small></div>
+<button class="primary" id="startBtn">START RACE</button>
+<button class="tap" id="tapBtn" hidden disabled>WAIT FOR GREEN</button>
+<div class="stats">
+<div class="stat"><label>YOUR LAST REACTION</label><strong id="last">-- ms</strong></div>
+<div class="stat"><label>PERSONAL BEST</label><strong id="best">-- ms</strong></div>
+</div>
+<p class="note">False starts count if you tap before the green signal. Your personal best is saved on this device and browser. Timing can vary slightly between devices.</p>
+<div class="history" id="history">Daily global leaderboard: coming in a later update.</div>
+</section>
+</main>
+<script>
+(function(){
+const lights=[...document.querySelectorAll('.light')],strip=document.getElementById('goStrip'),status=document.getElementById('status'),start=document.getElementById('startBtn'),tap=document.getElementById('tapBtn'),last=document.getElementById('last'),best=document.getElementById('best');
+let phase='idle',timers=[],goAt=0,roundStart=0;
+const saved=Number(localStorage.getItem('curbReactionBest'));
+if(saved>0)best.textContent=saved+' ms';
+function clearTimers(){timers.forEach(clearTimeout);timers=[]}
+function resetLights(){lights.forEach(x=>x.classList.remove('on'));strip.classList.remove('go')}
+function say(main,sub){status.innerHTML=main+(sub?'<small>'+sub+'</small>':'')}
+function finish(){clearTimers();phase='idle';start.hidden=false;tap.hidden=true;tap.disabled=true;start.textContent='RACE AGAIN'}
+function falseStart(){if(phase!=='countdown'&&phase!=='waiting')return;clearTimers();phase='false';tap.classList.add('false');tap.textContent='FALSE START';say('FALSE START!','You jumped the lights. Take a breath and try again.');finish();setTimeout(()=>tap.classList.remove('false'),500)}
+function begin(){clearTimers();resetLights();last.textContent='-- ms';start.hidden=true;tap.hidden=false;tap.disabled=false;tap.classList.remove('ready','false');tap.textContent='WAIT FOR GREEN';phase='countdown';say('LIGHTS OUT SOON...','Wait for the green strip. Do not tap early.');
+lights.forEach((light,i)=>timers.push(setTimeout(()=>light.classList.add('on'),650+i*650)));
+const delay=650+4*650+700+Math.random()*2600;
+timers.push(setTimeout(()=>{if(phase!=='countdown')return;lights.forEach(x=>x.classList.remove('on'));strip.classList.add('go');phase='go';goAt=performance.now();tap.classList.add('ready');tap.textContent='TAP NOW!';say('GO! GO! GO!','Tap the button now!');},delay));
+}
+start.addEventListener('click',begin);
+tap.addEventListener('click',()=>{
+if(phase==='countdown'||phase==='waiting'){falseStart();return}
+if(phase!=='go')return;
+const reaction=Math.round(performance.now()-goAt);phase='result';last.textContent=reaction+' ms';
+const old=Number(localStorage.getItem('curbReactionBest'))||0;
+if(!old||reaction<old){localStorage.setItem('curbReactionBest',String(reaction));best.textContent=reaction+' ms';say(reaction+' ms! NEW PERSONAL BEST','Excellent launch. Your best is saved on this device.')}
+else{say(reaction+' ms','Good run. Try again to beat your '+old+' ms personal best.')}
+finish();
+});
+})();
+</script>
+</body>
+</html>
