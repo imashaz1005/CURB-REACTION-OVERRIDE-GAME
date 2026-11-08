@@ -16,6 +16,10 @@ main{width:min(760px,100%)}header{text-align:center;margin:8px 0 24px}.eyebrow{c
 button{border:0;border-radius:12px;padding:16px 24px;font-size:1rem;font-weight:900;cursor:pointer;transition:transform .12s,filter .12s}button:active{transform:scale(.98)}button:disabled{opacity:.45;cursor:not-allowed}.primary{width:100%;background:var(--yellow);color:#111}.tap{width:100%;min-height:92px;background:#202633;color:white;border:2px solid #566176;font-size:1.4rem;letter-spacing:.08em}.tap.ready{background:var(--green);color:#07130c;border-color:#a7ffd0}.tap.false{background:var(--red);border-color:#ff9aa4}
 .stats{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:18px}.stat{background:#090c12;border:1px solid #293141;border-radius:12px;padding:14px}.stat label{display:block;color:var(--muted);font-size:.78rem;margin-bottom:6px}.stat strong{font-size:1.5rem;color:var(--yellow)}.note{font-size:.8rem;color:var(--muted);line-height:1.5;margin:18px 2px 0}.history{margin-top:16px;color:var(--muted);font-size:.86rem;text-align:center}
 a{color:#7daee8}
+
+.confetti-piece{position:fixed;top:-14px;width:9px;height:14px;z-index:9999;pointer-events:none;animation:confetti-fall 2.8s ease-in forwards}
+@keyframes confetti-fall{to{transform:translate3d(var(--drift),110vh,0) rotate(900deg);opacity:.15}}
+@media(prefers-reduced-motion:reduce){.confetti-piece{animation-duration:1.2s}}
 @media(max-width:420px){body{padding:16px 10px}.lights{gap:7px}.light{border-width:4px}.stats{gap:8px}}
 </style>
 </head>
@@ -44,6 +48,21 @@ const lights=[...document.querySelectorAll('.light')],strip=document.getElementB
 let phase='idle',timers=[],goAt=0,roundStart=0;
 const saved=Number(localStorage.getItem('curbReactionBest'));
 if(saved>0)best.textContent=saved+' ms';
+
+function celebrate(){
+const colors=['#ffd700','#20df78','#e32636','#ffffff','#4da3ff'];
+for(let i=0;i<90;i++){
+const piece=document.createElement('i');
+piece.className='confetti-piece';
+piece.style.left=(Math.random()*100)+'vw';
+piece.style.background=colors[Math.floor(Math.random()*colors.length)];
+piece.style.setProperty('--drift',((Math.random()-.5)*260)+'px');
+piece.style.animationDelay=(Math.random()*.45)+'s';
+piece.style.borderRadius=Math.random()>.5?'50%':'2px';
+document.body.appendChild(piece);
+setTimeout(()=>piece.remove(),3500);
+}
+}
 function clearTimers(){timers.forEach(clearTimeout);timers=[]}
 function resetLights(){lights.forEach(x=>x.classList.remove('on'));strip.classList.remove('go')}
 function say(main,sub){status.innerHTML=main+(sub?'<small>'+sub+'</small>':'')}
@@ -60,7 +79,7 @@ if(phase==='countdown'||phase==='waiting'){falseStart();return}
 if(phase!=='go')return;
 const reaction=Math.round(performance.now()-goAt);phase='result';last.textContent=reaction+' ms';
 const old=Number(localStorage.getItem('curbReactionBest'))||0;
-if(!old||reaction<old){localStorage.setItem('curbReactionBest',String(reaction));best.textContent=reaction+' ms';say(reaction+' ms! NEW PERSONAL BEST','Excellent launch. Your best is saved on this device.')}
+if(!old||reaction<old){localStorage.setItem('curbReactionBest',String(reaction));best.textContent=reaction+' ms';celebrate();say(reaction+' ms! NEW PERSONAL BEST','Excellent launch. Your best is saved on this device.')}
 else{say(reaction+' ms','Good run. Try again to beat your '+old+' ms personal best.')}
 finish();
 });
