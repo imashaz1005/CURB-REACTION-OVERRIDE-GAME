@@ -63,7 +63,7 @@ const seasons={
 };
 const seasonSelect=$('season'),teamSelect=$('team'),driverSelect=$('driver');
 Object.keys(seasons).sort((a,b)=>Number(a)-Number(b)).forEach(y=>{let o=document.createElement('option');o.value=y;o.textContent=seasons[y].label;seasonSelect.appendChild(o)});
-seasonSelect.value='2009';
+seasonSelect.value='1950';
 function loadTeams(){const data=seasons[seasonSelect.value];teamSelect.innerHTML='';Object.keys(data.teams).forEach(t=>{let o=document.createElement('option');o.value=t;o.textContent=t;teamSelect.appendChild(o)});loadDrivers();renderTyres();$('seasonHint').textContent=data.label+' · '+(data.tyres[0][0].startsWith('period')||data.tyres[0][0].startsWith('grooved')?'Era-style tyre choices are simplified for gameplay; historical compound names varied.':'Tyre choices are simplified for gameplay and reflect the selected era.')+' Featured teams and drivers only, not a complete entry list.'}
 function loadDrivers(){const drivers=seasons[seasonSelect.value].teams[teamSelect.value]||[];driverSelect.innerHTML='';drivers.forEach(d=>{let o=document.createElement('option');o.value=d;o.textContent=d;driverSelect.appendChild(o)})}
 function renderTyres(){const box=$('tyres');box.innerHTML='';seasons[seasonSelect.value].tyres.forEach((t,i)=>{let b=document.createElement('button');b.className='choice'+(i===0?' selected':'');b.dataset.tyre=t[0];b.innerHTML='<b>'+t[1]+'</b><small>'+t[2]+'</small>';b.onclick=()=>{box.querySelectorAll('.choice').forEach(x=>x.classList.remove('selected'));b.classList.add('selected');tyre=t[0]};box.appendChild(b)});tyre=seasons[seasonSelect.value].tyres[0][0]}
