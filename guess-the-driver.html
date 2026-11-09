@@ -1,0 +1,68 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#08090d"><title>Guess the Driver | Curb Override</title>
+<style>
+:root{color-scheme:dark;--bg:#08090d;--panel:#141923;--yellow:#ffd700;--red:#e32636;--muted:#aab2c0;--green:#20df78}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:24px 14px;background:radial-gradient(ellipse at 50% -15%,#303748 0,var(--bg) 58%);color:#f5f6f8;font-family:Arial,Helvetica,sans-serif;display:flex;justify-content:center}main{width:min(760px,100%)}header{text-align:center;margin:8px 0 22px}.eyebrow{color:var(--red);font-size:.75rem;font-weight:900;letter-spacing:.2em}h1{font-size:clamp(2.2rem,8vw,4rem);font-style:italic;line-height:1;margin:10px 0;color:var(--yellow);text-transform:uppercase}.sub{color:var(--muted);margin:0}.card{background:linear-gradient(145deg,#191f2b,#0e121a);border:1px solid #354052;border-radius:20px;padding:clamp(18px,4vw,30px);box-shadow:0 20px 60px #0008}.top{display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap;color:var(--muted);font-size:.85rem}.pill{background:#252d3b;border:1px solid #465268;border-radius:999px;padding:8px 12px}.pill b{color:var(--yellow)}.progress{height:8px;background:#303747;border-radius:20px;overflow:hidden;margin:18px 0 24px}.bar{height:100%;width:0;background:var(--yellow);transition:width .25s}.mystery{text-align:center;padding:24px 12px;background:#090c12;border:1px solid #2c3544;border-radius:16px}.helmet{font-size:3rem}.mystery h2{font-size:1.3rem;margin:10px 0 4px}.mystery p{color:var(--muted);margin:0}.clues{display:grid;gap:10px;margin:18px 0}.clue{display:flex;gap:12px;align-items:flex-start;background:#0b0f16;border:1px solid #303a4b;border-radius:12px;padding:13px;color:#e8ebf0;line-height:1.45}.number{flex:0 0 28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#30394a;color:var(--yellow);font-weight:900}.clue.locked{color:#747e8e}.clue.locked .number{color:#9ba5b6}.answer{display:flex;gap:10px;margin-top:16px}.answer input{flex:1;min-width:0;padding:15px;border-radius:11px;border:1px solid #4b586e;background:#080b11;color:white;font-size:1rem}.btn{border:0;border-radius:11px;padding:14px 18px;font-weight:900;cursor:pointer;font-size:.95rem}.btn:disabled{opacity:.45;cursor:not-allowed}.primary{background:var(--yellow);color:#111}.secondary{background:#293344;color:#fff;border:1px solid #536078}.success{color:var(--green)}.feedback{min-height:50px;text-align:center;padding:14px 4px;font-weight:800}.actions{display:flex;gap:10px;flex-wrap:wrap}.actions .btn{flex:1}.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px}.stat{background:#090c12;border:1px solid #2b3545;border-radius:12px;padding:13px;text-align:center}.stat small{display:block;color:var(--muted);font-size:.72rem;margin-bottom:6px}.stat strong{font-size:1.4rem;color:var(--yellow)}.start{text-align:center;padding:28px 12px}.start p{color:var(--muted);line-height:1.6}.hidden{display:none!important}.fine{font-size:.78rem;color:var(--muted);line-height:1.5;margin-top:18px;text-align:center}button:focus-visible,input:focus-visible{outline:3px solid var(--green);outline-offset:3px}@media(max-width:480px){.answer{flex-direction:column}.stats{gap:7px}.stat{padding:10px 5px}.stat strong{font-size:1.15rem}}
+</style>
+</head>
+<body><main>
+<header><div class="eyebrow">CURB OVERRIDE NEWS PRESENTS</div><h1>GUESS THE DRIVER</h1><p class="sub">The paddock's in your head. Can you name the driver?</p></header>
+<section class="card">
+<div class="top"><span class="pill">ROUND <b id="round">0</b> / 10</span><span class="pill">SCORE <b id="score">0</b></span><span class="pill">🔥 STREAK <b id="streak">0</b></span></div>
+<div class="progress"><div class="bar" id="bar"></div></div>
+<div id="intro" class="start"><div class="helmet">🏁</div><h2>Ten drivers. Three clues each.</h2><p>Every round starts with one clue. Reveal more clues if you need them, but fewer clues means more points. Type the driver's name to lock in your answer.</p><button class="btn primary" id="start">START GAME</button></div>
+<div id="game" class="hidden">
+<div class="mystery"><div class="helmet">🏎️</div><h2>MYSTERY DRIVER</h2><p>Clue <b id="clueCount">1</b> of 3 revealed</p></div>
+<div class="clues" id="clues"></div>
+<div class="actions"><button class="btn secondary" id="hint">REVEAL NEXT CLUE</button></div>
+<form class="answer" id="answerForm"><input id="guess" autocomplete="off" placeholder="Enter driver name..." aria-label="Driver name" required><button class="btn primary" type="submit">LOCK IN</button></form>
+<div class="feedback" id="feedback" aria-live="polite"></div>
+<div class="actions"><button class="btn secondary hidden" id="next">NEXT DRIVER →</button></div>
+</div>
+<div id="end" class="start hidden"><div class="helmet">🏆</div><h2>CHEQUERED FLAG!</h2><p id="finalText"></p><button class="btn primary" id="again">PLAY AGAIN</button></div>
+<div class="stats"><div class="stat"><small>BEST SCORE</small><strong id="best">0</strong></div><div class="stat"><small>GAMES PLAYED</small><strong id="played">0</strong></div><div class="stat"><small>BEST STREAK</small><strong id="bestStreak">0</strong></div></div>
+<p class="fine">Single-player mode · All-time F1 grid · Your best score is saved on this device and browser.</p>
+</section></main>
+<script>
+(()=>{
+const drivers=[
+{name:"Lewis Hamilton",aliases:["hamilton","lewis"],clues:["He has won seven Formula 1 World Drivers' Championships.","He made his F1 debut with McLaren in 2007.","He moved to Ferrari for the 2025 season."]},
+{name:"Michael Schumacher",aliases:["schumacher","michael"],clues:["He won five consecutive titles with Ferrari from 2000 to 2004.","He shares the record of seven Drivers' Championships.","His famous red-car era made him a Ferrari icon."]},
+{name:"Ayrton Senna",aliases:["senna","ayrton"],clues:["He won three world titles.","He was famous for his qualifying speed and wet-weather skill.","His final F1 team was Williams."]},
+{name:"Max Verstappen",aliases:["verstappen","max"],clues:["He became the youngest driver to start an F1 race.","He won four consecutive titles from 2021 to 2024.","He drives for Red Bull Racing."]},
+{name:"Fernando Alonso",aliases:["alonso","fernando"],clues:["He won back-to-back world titles in 2005 and 2006.","He ended Michael Schumacher's early-2000s title streak.","He is known for his long F1 career and racecraft."]},
+{name:"Sebastian Vettel",aliases:["vettel","sebastian"],clues:["He won four consecutive titles from 2010 to 2013.","He became the youngest world champion at the time in 2010.","He won all four titles with Red Bull."]},
+{name:"Niki Lauda",aliases:["lauda","niki"],clues:["He won three world championships.","He returned to racing after a serious 1976 accident.","He later became a key figure at Mercedes."]},
+{name:"Jackie Stewart",aliases:["stewart","jackie"],clues:["He won three world championships in the 1960s and 70s.","He became a major campaigner for improved driver safety.","His nickname was 'The Flying Scot'."]},
+{name:"Kimi Räikkönen",aliases:["raikkonen","räikkönen","kimi"],clues:["He won the 2007 world championship with Ferrari.","His radio messages were often short and famously blunt.","Fans called him 'The Iceman'."]},
+{name:"Nigel Mansell",aliases:["mansell","nigel"],clues:["He won the 1992 world championship.","He drove the famous Williams FW14B.","His fans knew him as 'Il Leone'."]},
+{name:"Mika Häkkinen",aliases:["hakkinen","häkkinen","mika"],clues:["He won back-to-back titles in 1998 and 1999.","He raced for McLaren during his title-winning years.","He was nicknamed 'The Flying Finn'."]},
+{name:"Alain Prost",aliases:["prost","alain"],clues:["He won four world championships.","His rivalry with Ayrton Senna became one of F1's most famous.","He was nicknamed 'The Professor'."]},
+{name:"Jenson Button",aliases:["button","jenson"],clues:["He won the 2009 world championship.","He took the title with Brawn GP.","He later raced for McLaren alongside Lewis Hamilton."]},
+{name:"Damon Hill",aliases:["hill","damon"],clues:["He won the 1996 world championship.","His father Graham was also a Formula 1 world champion.","He won his title with Williams."]},
+{name:"Emerson Fittipaldi",aliases:["fittipaldi","emerson"],clues:["He won world titles in 1972 and 1974.","He became the youngest champion in F1 history at the time in 1972.","He raced for Lotus and McLaren."]},
+{name:"Graham Hill",aliases:["graham"],clues:["He won world titles in 1962 and 1968.","He is the only driver to have won the Triple Crown of Motorsport.","His son Damon also became an F1 world champion."]},
+{name:"Jim Clark",aliases:["clark","jim"],clues:["He won two world championships in 1963 and 1965.","He was a star driver for Team Lotus.","He also won the 1965 Indianapolis 500."]},
+{name:"Juan Manuel Fangio",aliases:["fangio","juan manuel"],clues:["He won five world championships during the 1950s.","He won titles with four different teams.","He was nicknamed 'El Maestro'."]},
+{name:"Nico Rosberg",aliases:["rosberg","nico"],clues:["He won the 2016 world championship.","His father Keke was also an F1 world champion.","He retired shortly after winning his only title."]},
+{name:"Mario Andretti",aliases:["andretti","mario"],clues:["He won the 1978 Formula 1 world championship.","He is one of motorsport's most versatile champions.","He won his title with Lotus."]}
+];
+const $=id=>document.getElementById(id);let deck=[],index=0,score=0,streak=0,bestStreak=0,revealed=1,locked=false,roundScore=0;
+const norm=s=>s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9 ]/g,"").replace(/\s+/g," ").trim();
+function shuffle(a){const x=[...a];for(let i=x.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[x[i],x[j]]=[x[j],x[i]]}return x}
+function saved(k,d){try{return JSON.parse(localStorage.getItem(k))??d}catch{return d}}
+function stats(){ $("best").textContent=saved("curbGuessBest",0);$("played").textContent=saved("curbGuessPlayed",0);$("bestStreak").textContent=saved("curbGuessStreak",0)}
+function update(){ $("round").textContent=Math.min(index+1,10);$("score").textContent=score;$("streak").textContent=streak;$("bar").style.width=(index/10*100)+"%"}
+function showClues(){const d=deck[index];$("clueCount").textContent=revealed;$("clues").innerHTML=d.clues.map((c,i)=>'<div class="clue '+(i<revealed?'':'locked')+'"><span class="number">'+(i+1)+'</span><span>'+(i<revealed?c:'Clue locked. Reveal to uncover it.')+'</span></div>').join('');$("hint").disabled=revealed===3||locked;$("hint").textContent=revealed===3?'ALL CLUES REVEALED':'REVEAL NEXT CLUE';}
+function begin(){deck=shuffle(drivers).slice(0,10);index=0;score=0;streak=0;bestStreak=0;$("intro").classList.add("hidden");$("end").classList.add("hidden");$("game").classList.remove("hidden");loadRound()}
+function loadRound(){revealed=1;locked=false;roundScore=0;$("guess").disabled=false;$("guess").value="";$("feedback").textContent="";$("next").classList.add("hidden");$("answerForm").classList.remove("hidden");showClues();update();$("guess").focus()}
+function reveal(){if(locked||revealed>=3)return;revealed++;showClues()}
+function submit(e){e.preventDefault();if(locked)return;const d=deck[index],g=norm($("guess").value),accepted=[d.name,...d.aliases].map(norm);if(!g)return;if(accepted.includes(g)){locked=true;roundScore=revealed===1?3:revealed===2?2:1;score+=roundScore;streak++;bestStreak=Math.max(bestStreak,streak);$("feedback").innerHTML='<span class="success">CORRECT! '+d.name+' · +'+roundScore+' POINT'+(roundScore>1?'S':'')+'</span>';$("answerForm").classList.add("hidden");$("hint").disabled=true;$("next").classList.remove("hidden");}else{streak=0;$("feedback").textContent="Not quite. Try again, or reveal another clue.";}update()}
+function next(){index++;if(index>=10){finish();return}loadRound()}
+function finish(){ $("game").classList.add("hidden");$("end").classList.remove("hidden");$("bar").style.width="100%";const old=saved("curbGuessBest",0),played=saved("curbGuessPlayed",0),oldStreak=saved("curbGuessStreak",0);localStorage.setItem("curbGuessBest",String(Math.max(old,score)));localStorage.setItem("curbGuessPlayed",String(played+1));localStorage.setItem("curbGuessStreak",String(Math.max(oldStreak,bestStreak)));$("finalText").textContent="You scored "+score+" out of 30, with a best streak of "+bestStreak+". "+(score>=25?"World champion performance!":score>=16?"A strong points finish.":"Back to the garage. Another round?");stats()}
+$("start").addEventListener("click",begin);$("again").addEventListener("click",begin);$("hint").addEventListener("click",reveal);$("answerForm").addEventListener("submit",submit);$("next").addEventListener("click",next);stats();
+})();
+</script></body></html>
