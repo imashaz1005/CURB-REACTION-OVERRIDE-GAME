@@ -26,7 +26,7 @@ h1{font-size:clamp(2rem,5vw,3.5rem);font-style:italic;text-transform:uppercase;l
 .single-wheel:after{content:"";position:absolute;inset:12px;border:3px solid #606d7c;border-radius:50%}
 .single-wheel.removed{opacity:.15;transform:translateY(-65px) rotate(35deg);pointer-events:none}
 .single-wheel.fitted{border-color:var(--tyre-color,#ef3340);box-shadow:inset 0 0 0 3px var(--tyre-color,#ef3340),0 0 14px #ffffff33}
-.wheel-hit{position:absolute;left:70px;top:60px;width:112px;height:112px;z-index:4;cursor:pointer;background:transparent;border:0;border-radius:20px;touch-action:manipulation}
+.wheel-hit{position:absolute;left:70px;top:60px;width:112px;height:112px;z-index:4;cursor:pointer;background:transparent;border:0;border-radius:20px;touch-action:manipulation;pointer-events:auto}
 .mechanic{position:absolute;left:calc(50% - 150px);top:59%;width:52px;height:112px;z-index:2;transition:all .25s}
 .mechanic-head{position:absolute;top:0;left:14px;width:25px;height:25px;border-radius:50%;background:#eac09e;border:3px solid #263448}
 .mechanic-body{position:absolute;top:24px;left:6px;width:42px;height:49px;background:#e8edf3;border-radius:12px 12px 5px 5px;border-top:8px solid #ef3340}
@@ -97,12 +97,13 @@ document.querySelectorAll('[data-tyre]').forEach(b=>b.addEventListener('click',(
 function setStep(n,label){step=n;$('sequenceStatus').textContent='STEP '+n+' / 3';$('progress').style.width=(n/3*100)+'%';const ids=['removeState','fitState','secureState'];const vals=['REMOVED','FITTED','SECURE'];$(ids[n-1]).textContent=vals[n-1];$(ids[n-1]).className='done';$('phase').textContent=label;}
 function startApproach(){
  if(state!=='ready')return;
- state='approach';$('approach').disabled=true;$('approach').textContent='CAR APPROACHING…';$('phase').textContent='CAR ARRIVES IN 3.0s';$('car').className='car';$('log').textContent='Three seconds! Confirm the correct compound before the car reaches your wheel station.';
+ state='approach';$('reset').disabled=false;$('approach').disabled=true;$('approach').textContent='CAR APPROACHING…';$('phase').textContent='CAR ARRIVES IN 3.0s';$('car').className='car';$('log').textContent='Three seconds! Confirm the correct compound before the car reaches your wheel station.';
  approachAt=performance.now();
  countdownTimer=setInterval(()=>{const left=Math.max(0,3-(performance.now()-approachAt)/1000);$('phase').textContent=left>0?'CAR ARRIVES IN '+left.toFixed(1)+'s':'CAR IN BOX';if(left<=0){clearInterval(countdownTimer);state='arrived';$('car').classList.add('inbox');$('approach').textContent='CAR IN BOX · TAP THE WHEEL';$('approach').disabled=true;$('log').textContent='Car is stationary. Tap the single highlighted wheel to remove the old tyre.';}},40);
 }
 function removeOld(){
  if(state!=='arrived')return;
+ startAt=performance.now();clockTimer=setInterval(()=>{if(state==='remove'||state==='tighten')$('time').textContent=((performance.now()-startAt)/1000).toFixed(2)+'s';},40);
  state='remove';$('targetWheel').classList.add('removed');setStep(1,'OLD TYRE REMOVED');$('log').textContent='Old tyre removed. Now tap the new compound below to fit it.';$('approach').textContent='FIT A NEW TYRE';$('approach').disabled=true;
 }
 function fitTyre(k){
@@ -130,9 +131,7 @@ $('nextRadio').disabled=false;
 $('log').textContent='Driver radio is live. Choose the requested compound, then start the 3-second approach.';
 $('targetWheel').setAttribute('aria-label','Tap to remove or secure the single tyre');
 $('approach').addEventListener('click',()=>{if(state==='approach'&&$('phase').textContent==='CAR IN BOX')return;});
-const originalStart=startApproach;
-const startButton=$('approach');
-startButton.addEventListener('click',()=>{if(state==='ready'){startAt=performance.now();$('reset').disabled=false;clockTimer=setInterval(()=>{if(state!=='ready'&&state!=='approach')return;$('time').textContent=((performance.now()-startAt)/1000).toFixed(2)+'s';},50);}});
+
 })();
 </script>
 </body>
