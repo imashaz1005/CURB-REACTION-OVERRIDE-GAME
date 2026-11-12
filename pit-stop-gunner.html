@@ -73,18 +73,21 @@ const compounds={soft:{name:'SOFT',color:'#ef3340'},medium:{name:'MEDIUM',color:
 const calls=[['soft','“Box, box. I need fresh soft tyres!”'],['medium','“Box this lap. Mediums, please.”'],['hard','“We need the hard tyre for this stint.”'],['inter','“Rain is coming. Fit the intermediates!”'],['wet','“Track is soaked. Full wets, full wets!”']];
 function newCall(){const choices=calls.filter(x=>x[0]!==request);const item=choices[Math.floor(Math.random()*choices.length)];request=item[0];$('radioMessage').textContent=item[1];$('requested').textContent=compounds[request].name;$('requested').style.color=compounds[request].color;$('log').textContent='New radio instruction received. Select '+compounds[request].name+' tyres.';document.querySelectorAll('.tyre').forEach(b=>b.classList.toggle('correct',b.dataset.tyre===request));}
 function selectTyre(value){if(running||arrived)return;selected=value;document.querySelectorAll('.tyre').forEach(b=>b.classList.toggle('selected',b.dataset.tyre===value));$('log').textContent='Selected '+compounds[value].name+'. Driver requested '+compounds[request].name+'. '+(value===request?'Correct compound locked in!':'You have until the car arrives to change it.');}\nfunction beginArrivalCountdown(){clearInterval(arrivalTimer);arrived=false;$('startStop').disabled=true;$('startStop').textContent='WAIT FOR CAR';$('phase').textContent='CAR ARRIVES IN 3.0s';$('log').textContent='RADIO CALL! '+compounds[request].name+' tyres requested. You have 3 seconds to select the correct set before the car arrives.';arrivalAt=performance.now();arrivalTimer=setInterval(()=>{const left=Math.max(0,3-(performance.now()-arrivalAt)/1000);$('phase').textContent=left>0?'CAR ARRIVES IN '+left.toFixed(1)+'s':'CAR IN BOX';if(left<=0){clearInterval(arrivalTimer);arrived=true;$('startStop').disabled=false;$('startStop').textContent='START WHEEL CHANGE';$('phase').textContent='CAR IN BOX';document.querySelectorAll('.tyre').forEach(b=>b.disabled=false);$('log').textContent='CAR IN BOX! Tyre choice locked. Complete your wheel-gun sequence.';}},50);}
+function fitTyre(value){
+ if(!running||phase!==1||!arrived){$('log').textContent='Remove the old wheel first, then tap or right-click the replacement tyre.';return;}
+ selected=value;
+ document.querySelectorAll('.tyre').forEach(t=>t.classList.toggle('selected',t.dataset.tyre===value));
+ $('targetWheel').style.borderColor=compounds[selected].color;
+ $('targetWheel').style.boxShadow='inset 0 0 0 3px '+compounds[selected].color;
+ $('log').textContent='Fitted '+compounds[selected].name+'. Now tap the fitted wheel to tighten it.';
+ advance();
+}
 document.querySelectorAll('[data-tyre]').forEach(b=>{
- b.addEventListener('click',()=>selectTyre(b.dataset.tyre));
- b.addEventListener('contextmenu',e=>{
-  e.preventDefault();
-  if(!running||phase!==1||!arrived){$('log').textContent='Right-click a tyre only after the old wheel has been removed.';return;}
-  selected=b.dataset.tyre;
-  document.querySelectorAll('.tyre').forEach(t=>t.classList.toggle('selected',t===b));
-  $('targetWheel').style.borderColor=compounds[selected].color;
-  $('targetWheel').style.boxShadow='inset 0 0 0 3px '+compounds[selected].color;
-  $('log').textContent='Fitted '+compounds[selected].name+'. Now click the fitted wheel to tighten it.';
-  advance();
+ b.addEventListener('click',()=>{
+  if(running&&phase===1&&arrived){fitTyre(b.dataset.tyre);return;}
+  selectTyre(b.dataset.tyre);
  });
+ b.addEventListener('contextmenu',e=>{e.preventDefault();fitTyre(b.dataset.tyre);});
 });
 $('camera').addEventListener('change',e=>{const v=e.target.value;$('stage').className='stage '+v;$('viewlabel').textContent=({first:'FIRST PERSON CAMERA',third:'THIRD PERSON CAMERA',wall:'PIT WALL CAMERA'})[v]});
 function reset(){phase=0;running=false;arrived=false;clearInterval(timer);clearInterval(arrivalTimer);document.querySelectorAll('.tyre').forEach(b=>b.disabled=false);$('phase').textContent='CAR ARRIVES IN 3.0s';$('sequenceStatus').textContent='NOT STARTED';$('removeState').textContent='WAITING';$('fitState').textContent='WAITING';$('secureState').textContent='WAITING';['removeState','fitState','secureState'].forEach(id=>$(id).className='');$('progress').style.width='0%';$('time').textContent='0.00s';$('startStop').textContent='WAIT FOR CAR';$('startStop').disabled=true;$('reset').disabled=true;$('targetWheel').classList.remove('removed');$('targetWheel').classList.add('target');$('log').textContent='Ready for the next stop. Check the driver radio.';clock=0;}
@@ -93,9 +96,9 @@ $('targetWheel').addEventListener('click',()=>{
  if(!running){$('log').textContent='Wait until the car is in the box, then start the wheel change.';return;}
  if(phase===0){advance();return;}
  if(phase===2){advance();return;}
- if(phase===1){$('log').textContent='The old wheel is off. RIGHT-CLICK the new tyre compound to fit it.';}
+ if(phase===1){$('log').textContent='The old wheel is off. TAP or RIGHT-CLICK the new tyre compound to fit it.';}
 });
-function advance(){phase++;const states=[['removeState','WHEEL REMOVED'],['fitState','NEW TYRE FITTED'],['secureState','WHEEL SECURE']];const labels=['REMOVE OLD WHEEL','FIT SELECTED TYRE','CONFIRM WHEEL SECURE'];$('phase').textContent=labels[phase-1];$('sequenceStatus').textContent='STEP '+phase+' / 3';$(states[phase-1][0]).textContent=states[phase-1][1];$(states[phase-1][0]).className='done';$('progress').style.width=(phase/3*100)+'%';if(phase===1){$('targetWheel').classList.add('removed');$('log').textContent='Old wheel removed. RIGHT-CLICK the new tyre compound to fit it.';}if(phase===2){$('targetWheel').classList.remove('removed');$('targetWheel').style.borderColor=compounds[selected].color;$('targetWheel').style.boxShadow='inset 0 0 0 3px '+compounds[selected].color;$('log').textContent='New tyre fitted. CLICK the tyre on the car again to tighten it.';}if(phase===3)finish();else{$('startStop').textContent=phase===1?'RIGHT-CLICK NEW TYRE':'CLICK TYRE TO TIGHTEN';$('startStop').disabled=true;$('log').textContent=phase===1?'Old wheel removed. RIGHT-CLICK the new tyre compound below.':'New tyre fitted. CLICK the tyre on the car again to tighten it.';}}
+function advance(){phase++;const states=[['removeState','WHEEL REMOVED'],['fitState','NEW TYRE FITTED'],['secureState','WHEEL SECURE']];const labels=['REMOVE OLD WHEEL','FIT SELECTED TYRE','CONFIRM WHEEL SECURE'];$('phase').textContent=labels[phase-1];$('sequenceStatus').textContent='STEP '+phase+' / 3';$(states[phase-1][0]).textContent=states[phase-1][1];$(states[phase-1][0]).className='done';$('progress').style.width=(phase/3*100)+'%';if(phase===1){$('targetWheel').classList.add('removed');$('log').textContent='Old wheel removed. RIGHT-CLICK the new tyre compound to fit it.';}if(phase===2){$('targetWheel').classList.remove('removed');$('targetWheel').style.borderColor=compounds[selected].color;$('targetWheel').style.boxShadow='inset 0 0 0 3px '+compounds[selected].color;$('log').textContent='New tyre fitted. CLICK the tyre on the car again to tighten it.';}if(phase===3)finish();else{$('startStop').textContent=phase===1?'TAP NEW TYRE':'CLICK TYRE TO TIGHTEN';$('startStop').disabled=true;$('log').textContent=phase===1?'Old wheel removed. TAP or RIGHT-CLICK the new tyre compound below.':'New tyre fitted. CLICK the tyre on the car again to tighten it.';}}
 $('startStop').addEventListener('click',()=>{if(!running&&phase===0){if(!arrived)return;running=true;startAt=performance.now();$('reset').disabled=false;$('startStop').disabled=true;$('startStop').textContent='CLICK THE OLD TYRE';$('phase').textContent='PIT STOP IN PROGRESS';$('sequenceStatus').textContent='STEP 1 / 3';$('log').textContent='Car is in the box. CLICK the old tyre on the car to remove it.';timer=setInterval(()=>{clock=performance.now()-startAt;$('time').textContent=(clock/1000).toFixed(2)+'s';},30);return;}if(running){$('log').textContent=phase===1?'Right-click the new tyre compound to fit it.':'Click the fitted tyre on the car to tighten it.';}});
 $('reset').addEventListener('click',()=>{reset();beginArrivalCountdown();});$('newCall').addEventListener('click',()=>{if(running||arrived){$('log').textContent='Finish this stop and reset before the next driver arrives.';return;}newCall();beginArrivalCountdown();});
 document.querySelectorAll('.tyre').forEach(b=>b.classList.toggle('correct',b.dataset.tyre===request));$('best').textContent='--';$('score').textContent='--';beginArrivalCountdown();
