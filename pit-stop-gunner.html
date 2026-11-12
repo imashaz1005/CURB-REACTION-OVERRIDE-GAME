@@ -15,7 +15,7 @@ h1{font-size:clamp(2rem,5vw,3.5rem);font-style:italic;text-transform:uppercase;l
 .stage:before{content:"";position:absolute;z-index:-1;inset:55% 0 auto;height:5px;background:repeating-linear-gradient(90deg,#e7e7e7 0 35px,transparent 35px 65px);opacity:.5}
 .garage{position:absolute;inset:0 0 45%;background:linear-gradient(120deg,#152235,#1d3046 50%,#142235);clip-path:polygon(0 0,100% 0,100% 75%,0 100%);opacity:.85}
 .pit-mark{position:absolute;left:0;right:0;bottom:18%;height:2px;background:#d9e1eb;opacity:.35}
-.car{position:absolute;width:440px;height:170px;left:calc(100% + 470px);top:44%;transform:translateY(-50%);transition:left 1.25s cubic-bezier(.2,.75,.25,1);pointer-events:none}
+.car{position:absolute;width:440px;height:170px;left:calc(100% + 470px);top:44%;transform:translateY(-50%);transition:left 3s cubic-bezier(.2,.75,.25,1);pointer-events:none}
 .car.inbox{left:calc(50% - 220px)}.car.exit{left:-500px;transition:left 1.15s cubic-bezier(.65,0,.8,.35)}
 .car-body{position:absolute;left:15px;top:55px;width:410px;height:62px;background:linear-gradient(180deg,#f04450,#b81727);clip-path:polygon(0 56%,8% 46%,18% 10%,62% 0,78% 12%,89% 37%,100% 55%,97% 78%,12% 82%);filter:drop-shadow(0 7px 3px #080b11)}
 .cockpit{position:absolute;left:185px;top:29px;width:115px;height:48px;background:linear-gradient(135deg,#111c2b,#52657b);clip-path:polygon(18% 100%,35% 0,78% 0,100% 100%);border-top:3px solid #ef3340}
@@ -97,9 +97,9 @@ document.querySelectorAll('[data-tyre]').forEach(b=>b.addEventListener('click',(
 function setStep(n,label){step=n;$('sequenceStatus').textContent='STEP '+n+' / 3';$('progress').style.width=(n/3*100)+'%';const ids=['removeState','fitState','secureState'];const vals=['REMOVED','FITTED','SECURE'];$(ids[n-1]).textContent=vals[n-1];$(ids[n-1]).className='done';$('phase').textContent=label;}
 function startApproach(){
  if(state!=='ready')return;
- state='approach';$('reset').disabled=false;$('approach').disabled=true;$('approach').textContent='CAR APPROACHING…';$('phase').textContent='CAR ARRIVES IN 3.0s';$('car').className='car';$('log').textContent='Three seconds! Confirm the correct compound before the car reaches your wheel station.';
+ state='approach';$('reset').disabled=false;$('approach').disabled=true;$('approach').textContent='CAR APPROACHING…';$('phase').textContent='CAR ARRIVES IN 3.0s';$('car').className='car inbox';$('log').textContent='Three seconds! Confirm the correct compound before the car reaches your wheel station.';
  approachAt=performance.now();
- countdownTimer=setInterval(()=>{const left=Math.max(0,3-(performance.now()-approachAt)/1000);$('phase').textContent=left>0?'CAR ARRIVES IN '+left.toFixed(1)+'s':'CAR IN BOX';if(left<=0){clearInterval(countdownTimer);state='arrived';$('car').classList.add('inbox');$('approach').textContent='CAR IN BOX · TAP THE WHEEL';$('approach').disabled=true;$('log').textContent='Car is stationary. Tap the single highlighted wheel to remove the old tyre.';}},40);
+ countdownTimer=setInterval(()=>{const left=Math.max(0,3-(performance.now()-approachAt)/1000);$('phase').textContent=left>0?'CAR ARRIVES IN '+left.toFixed(1)+'s':'CAR IN BOX';if(left<=0){clearInterval(countdownTimer);state='arrived';$('approach').textContent='CAR IN BOX · TAP THE WHEEL';$('approach').disabled=true;$('log').textContent='Car is stationary. Tap the single highlighted wheel to remove the old tyre.';}},40);
 }
 function removeOld(){
  if(state!=='arrived')return;
